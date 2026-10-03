@@ -149,7 +149,7 @@ const CONFIG = {
   particleSize: 0.05,                               // размер частиц
   rotationSpeed: 0.15,                              // скорость вращения 3D
   defaultMode:  'Галактика',                        // Звёзды / Галактика / Шар / Волна / Тоннель
-  shareUrl:     'https://kanmambit-tech.github.io/friend/', // ССЫЛКА на сайт, которую получат друзья (замени на свою)
+  shareUrl:     'https://kanmambet-tech.github.io/friend/', // ССЫЛКА на сайт, которую получат друзья (замени на свою)
   supabaseUrl:  'https://tlvbwtcsnvytqlsxrrdi.supabase.co', // адрес проекта
   supabaseKey:  'sb_publishable_fCjgKgN1fT0TkultHGiMDQ_1spXZhlu', // публичный ключ
   shareBtn:     '⇪ Поделиться',                     // текст кнопки в правом верхнем углу
@@ -292,6 +292,15 @@ const download = async it => {
   } catch(e) { window.open(fileUrl(it.path), '_blank'); }
 };
 
+const del = async it => {
+  try {
+    const r = await fetch(SB + '/rest/v1/items?id=eq.' + it.id, {method: 'DELETE', headers: H});
+    if (!r.ok) throw 0;
+    await fetch(SB + '/storage/v1/object/files/' + it.path, {method: 'DELETE', headers: H});
+    return true;
+  } catch(e) { alert('Не удалось удалить'); return false; }
+};
+
 // ===== Загрузка (страница 1) =====
 const fmt = s => s ? new Date(s + 'T00:00').toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'}) : 'Без даты';
 const iso = t => new Date(t).toISOString().slice(0, 10);
@@ -340,8 +349,10 @@ async function render() {
     const tg = document.createElement('span'); tg.className = 'tag'; tg.textContent = (it.type === 'video' ? 'ВИДЕО-' : 'ФОТО-') + String(n--).padStart(3, '0');
     const d = document.createElement('div'); d.className = 'in';
     const b = document.createElement('b'); b.textContent = it.title || 'Без названия';
+    const x = document.createElement('button'); x.className = 'x'; x.textContent = '✕';
+    x.onclick = async e => { e.stopPropagation(); if (confirm('Удалить запись?') && await del(it)) render(); };
     const dl = document.createElement('button'); dl.className = 'x'; dl.textContent = '⬇'; dl.style.color = 'var(--a)'; dl.onclick = e => { e.stopPropagation(); download(it); };
-    d.append(b, dl); c.append(m, tg, d);
+    d.append(b, dl, x); c.append(m, tg, d);
     c.onclick = () => show(it, u);
     // 3D-наклон карточки
     c.onpointermove = e => { const r = c.getBoundingClientRect(); const px = (e.clientX-r.left)/r.width-.5, py = (e.clientY-r.top)/r.height-.5; c.style.transform = `rotateY(${px*14}deg) rotateX(${-py*14}deg) scale(1.04)`; };
