@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Трио friend</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;800&family=Rajdhani:wght@500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{height:100%}
+:root{--bg:#03050d;--a:#00f0ff;--b:#ff2bd6;--txt:#d8f6ff;padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:Rajdhani,system-ui,"Segoe UI",sans-serif;font-weight:500;font-size:1.05rem;overflow-x:hidden}
+body::after{content:"";position:fixed;inset:0;z-index:30;pointer-events:none;background:repeating-linear-gradient(0deg,#0000 0 2px,#00000038 2px 3px);mix-blend-mode:multiply}
+body::before{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse at 50% 40%,#0000 40%,#000000b0 100%)}
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+#glow{position:fixed;width:360px;height:360px;margin:-180px 0 0 -180px;border-radius:50%;z-index:1;pointer-events:none;background:radial-gradient(#00f0ff22,#0000 65%);left:-999px;top:0}
+.orb,h1,h3,#nav button,.tag{font-family:Orbitron,Rajdhani,system-ui,sans-serif}
+
+/* верхняя HUD-панель */
+#hud{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:6;display:flex;justify-content:space-between;gap:8px;padding:8px 16px;font:600 .72rem Orbitron,sans-serif;letter-spacing:.14em;color:var(--a);text-shadow:0 0 8px var(--a);background:linear-gradient(#03050dcc,#0000)}
+#hud i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3dff9a;box-shadow:0 0 10px #3dff9a;margin-right:6px;animation:bl 1.4s infinite}
+@keyframes bl{50%{opacity:.25}}
+
+.page{position:relative;z-index:2;display:none;max-width:1040px;margin:0 auto;padding:64px 16px calc(120px + env(safe-area-inset-bottom,0px))}
+.page.on{display:block;animation:in .6s cubic-bezier(.2,.8,.2,1)}
+@keyframes in{from{opacity:0;transform:translateY(24px) scale(.98);filter:blur(6px)}}
+
+/* заголовок с глитчем */
+h1{position:relative;font-weight:800;font-size:clamp(1.9rem,7vw,3.4rem);text-align:center;margin:18px 0 4px;letter-spacing:.12em;text-transform:uppercase;color:#fff;text-shadow:0 0 12px var(--a),0 0 40px var(--a)}
+h1::before,h1::after{content:attr(data-text);position:absolute;inset:0;overflow:hidden}
+h1::before{color:var(--b);text-shadow:none;animation:g1 3.2s infinite steps(1);clip-path:inset(0 0 60% 0)}
+h1::after{color:var(--a);text-shadow:none;animation:g2 2.7s infinite steps(1);clip-path:inset(60% 0 0 0)}
+@keyframes g1{0%,90%,100%{transform:none;opacity:0}92%{transform:translate(-4px,1px);opacity:.9}96%{transform:translate(3px,-1px);opacity:.9}}
+@keyframes g2{0%,85%,100%{transform:none;opacity:0}87%{transform:translate(4px,-1px);opacity:.9}93%{transform:translate(-3px,1px);opacity:.9}}
+.sub{text-align:center;color:var(--a);opacity:.75;letter-spacing:.35em;text-transform:uppercase;font-size:.8rem;margin:0 0 14px}
+.sub::before{content:"// "}
+
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:12px 0}
+
+/* кнопки */
+button{padding:9px 16px;border:1px solid #00f0ff66;background:#00f0ff10;color:var(--a);font:600 .85rem Orbitron,sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px));transition:.25s}
+button:hover{background:#00f0ff2a;box-shadow:0 0 20px #00f0ff55;color:#fff}
+button.on,#go{background:linear-gradient(90deg,var(--a),#0a7cff);color:#001018;border-color:var(--a);box-shadow:0 0 22px #00f0ff88}
+button:disabled{opacity:.35;pointer-events:none}
+
+/* стеклянные панели с уголками */
+.hud{position:relative;background:linear-gradient(135deg,#00f0ff12,#ff2bd60d);border:1px solid #00f0ff33;backdrop-filter:blur(14px);padding:20px;margin:20px 0}
+.hud::before{content:"";position:absolute;inset:-1px;pointer-events:none;background:
+linear-gradient(var(--a),var(--a)) 0 0/18px 2px,linear-gradient(var(--a),var(--a)) 0 0/2px 18px,
+linear-gradient(var(--a),var(--a)) 100% 0/18px 2px,linear-gradient(var(--a),var(--a)) 100% 0/2px 18px,
+linear-gradient(var(--b),var(--b)) 0 100%/18px 2px,linear-gradient(var(--b),var(--b)) 0 100%/2px 18px,
+linear-gradient(var(--b),var(--b)) 100% 100%/18px 2px,linear-gradient(var(--b),var(--b)) 100% 100%/2px 18px;background-repeat:no-repeat;filter:drop-shadow(0 0 4px currentColor)}
+.hud h2{margin:0 0 8px;font:600 .95rem Orbitron,sans-serif;letter-spacing:.2em;text-align:center;text-transform:uppercase;color:#fff}
+.hud h2::before{content:"◈ ";color:var(--b)}
+input[type=text],input[type=date]{flex:1;min-width:150px;padding:11px 12px;border:1px solid #00f0ff44;background:#00101a99;color:#fff;font:inherit;color-scheme:dark;outline:0}
+input:focus{border-color:var(--a);box-shadow:0 0 14px #00f0ff55}
+input[type=file]{color:var(--txt);max-width:100%}
+input[type=file]::file-selector-button{margin-right:12px;padding:9px 16px;border:1px solid var(--b);background:#ff2bd618;color:#ff8be9;font:600 .8rem Orbitron,sans-serif;letter-spacing:.1em;cursor:pointer}
+#msg{text-align:center;min-height:1.3em;color:#3dff9a;text-shadow:0 0 8px #3dff9a}
+
+/* галерея */
+h3{margin:28px 4px 10px;font-weight:500;font-size:.9rem;letter-spacing:.2em;color:var(--b);text-shadow:0 0 10px var(--b);text-transform:uppercase;display:flex;align-items:center;gap:12px}
+h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--b),#0000)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;perspective:900px}
+.c{position:relative;background:#00101acc;border:1px solid #00f0ff44;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .3s,border-color .3s;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
+.c:hover{border-color:var(--a);box-shadow:0 0 30px #00f0ff66}
+.c img,.c video{display:block;width:100%;aspect-ratio:1;object-fit:cover;background:#000;filter:saturate(1.15) contrast(1.05)}
+.c::after{content:"";position:absolute;left:0;right:0;top:-40%;height:40%;background:linear-gradient(#0000,#00f0ff40,#0000);animation:sw 3.5s linear infinite;pointer-events:none}
+@keyframes sw{to{top:120%}}
+.c .in{padding:8px 10px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.c b{font-weight:600;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{position:absolute;top:6px;left:8px;font-size:.6rem;letter-spacing:.15em;color:var(--a);text-shadow:0 0 6px #000,0 0 6px #000;z-index:2}
+.x{border:0;background:none;padding:2px 6px;color:var(--b);box-shadow:none;clip-path:none}
+.empty{text-align:center;opacity:.7;margin-top:50px;letter-spacing:.1em}
+
+/* нижний док */
+#nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:8;display:flex;gap:6px;padding:6px;background:#03050dd0;border:1px solid #00f0ff55;backdrop-filter:blur(16px);box-shadow:0 0 30px #00f0ff33,inset 0 0 20px #00f0ff14;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px))}
+#nav button{padding:11px 22px}
+
+#view{position:fixed;inset:0;z-index:20;background:#000000ee;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:16px;backdrop-filter:blur(6px)}
+#view.on{display:flex;animation:in .4s}
+#view img,#view video{max-width:100%;max-height:78%;border:1px solid var(--a);box-shadow:0 0 50px #00f0ff66}
+#view .tag{position:static;font-size:.8rem}
+
+#hud button{padding:6px 12px;font-size:.68rem}
+#hd{align-self:center}
+#shm{position:fixed;inset:0;z-index:25;background:#000000dd;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px)}
+#shm.on{display:flex;animation:in .3s}
+#shm .hud{width:100%;max-width:460px;margin:0;background:#03101c}
+#shm input{width:100%;flex:none;text-align:center}
+#shm p{font-size:.85rem;opacity:.7;text-align:center;margin:8px 0 0}
+#shmsg{min-height:1.2em;text-align:center;color:#3dff9a;margin-top:6px}
+#boot{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;align-items:center;justify-content:center;font:600 .85rem Orbitron,monospace;color:var(--a);letter-spacing:.18em;transition:opacity .8s,visibility .8s;text-align:left;white-space:pre-line;line-height:2}
+#boot.off{opacity:0;visibility:hidden}
+</style></head><body>
+<canvas id="bg"></canvas><div id="glow"></div>
+<div id="boot"></div>
+<div id="hud"><span><i></i><span id="hs">СИСТЕМА В СЕТИ</span></span><span id="hd"></span><button id="sh">⇪ Поделиться</button></div>
+
+<!-- Страница 1: Главная -->
+<div class="page on" id="p-home">
+  <h1 id="t-name"></h1>
+  <p class="sub" id="t-sub"></p>
+  <div class="row modes"></div>
+  <div class="hud">
+    <h2 id="t-up"></h2>
+    <div class="row"><input id="file" type="file" accept="image/*,video/*" multiple></div>
+    <div class="row"><input id="title" type="text" placeholder="Название"><input id="date" type="date"></div>
+    <div class="row"><button id="go" disabled>Загрузить в архив</button></div>
+    <div id="msg"></div>
+  </div>
+</div>
+
+<!-- Страница 2: Галерея -->
+<div class="page" id="p-gal">
+  <h1 id="t-gal"></h1>
+  <p class="sub" id="count"></p>
+  <div class="row modes"></div>
+  <div id="list"></div>
+</div>
+
+<div id="nav"><button data-p="p-home" class="on" id="n-home"></button><button data-p="p-gal" id="n-gal"></button></div>
+<div id="view"></div>
+<div id="shm"><div class="hud">
+  <h2 id="shtitle">Поделиться сайтом</h2>
+  <div class="row"><input id="shurl" type="text" readonly></div>
+  <div class="row"><button id="shcopy">Копировать</button><button id="shsend">Отправить</button><button id="shclose">Закрыть</button></div>
+  <div id="shmsg"></div>
+  <p id="shnote"></p>
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ==========================================================
+//  НАСТРОЙКИ — меняй только этот блок (текст в кавычках)
+// ==========================================================
+const CONFIG = {
+  siteName:     'Трио friend',                      // название сайта
+  subtitle:     'архив воспоминаний',               // подзаголовок
+  galleryTitle: 'Архив',                            // заголовок 2-й страницы
+  uploadTitle:  'Загрузка данных',                  // заголовок блока загрузки
+  navHome:      '◈ Главная',                        // кнопка 1-й страницы
+  navGallery:   '▣ Архив',                          // кнопка 2-й страницы
+  bgColor:      '#03050d',                          // цвет фона
+  accentColor:  '#00f0ff',                          // основной неон
+  accent2Color: '#ff2bd6',                          // второй неон
+  particleColors: ['#00f0ff', '#ff2bd6', '#8a6bff'],// цвета частиц 3D
+  particleSize: 0.05,                               // размер частиц
+  rotationSpeed: 0.15,                              // скорость вращения 3D
+  defaultMode:  'Галактика',                        // Звёзды / Галактика / Шар / Волна / Тоннель
+  CONFIG:     'https://claude.ai/artifact/27bq4JnhFQStKbmQq22xCT', // ССЫЛКА на сайт, которую получат друзья (замени на свою)
+  shareBtn:     '⇪ Поделиться',                     // текст кнопки в правом верхнем углу
+  shareTitle:   'Поделиться сайтом',                // заголовок окна
+  shareText:    'Заходи на наш сайт!',              // текст при отправке
+  bootText:     ['ИНИЦИАЛИЗАЦИЯ ЯДРА…','ПОДКЛЮЧЕНИЕ К АРХИВУ…','ДОСТУП РАЗРЕШЁН']  // экран запуска
+};
+// ==========================================================
+
+const $ = id => document.getElementById(id);
+document.title = CONFIG.siteName;
+$('t-name').textContent = CONFIG.siteName; $('t-name').dataset.text = CONFIG.siteName;
+$('t-gal').textContent = CONFIG.galleryTitle; $('t-gal').dataset.text = CONFIG.galleryTitle;
+$('t-sub').textContent = CONFIG.subtitle; $('t-up').textContent = CONFIG.uploadTitle;
+$('n-home').textContent = CONFIG.navHome; $('n-gal').textContent = CONFIG.navGallery;
+const rs = document.documentElement.style;
+rs.setProperty('--bg', CONFIG.bgColor); rs.setProperty('--a', CONFIG.accentColor); rs.setProperty('--b', CONFIG.accent2Color);
+
+// экран запуска и часы
+(async () => { const b = $('boot'); for (const l of CONFIG.bootText) { b.textContent += '> ' + l + '\n'; await new Promise(r => setTimeout(r, 420)); } setTimeout(() => b.classList.add('off'), 350); })();
+const clockTick = () => { const d = new Date();
+  $('hd').textContent = d.toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'}) + ' · ' + d.toLocaleTimeString('ru-RU'); };
+clockTick(); setInterval(clockTick, 1000);
+addEventListener('pointermove', e => { $('glow').style.left = e.clientX + 'px'; $('glow').style.top = e.clientY + 'px'; });
+
+// ===== Поделиться =====
+$('sh').textContent = CONFIG.shareBtn; $('shtitle').textContent = CONFIG.shareTitle;
+const shareLink = () => CONFIG.shareUrl || (location.protocol.startsWith('http') ? location.href : '');
+$('sh').onclick = () => {
+  const u = shareLink();
+  $('shurl').value = u || 'Сначала опубликуй сайт и впиши ссылку в CONFIG → shareUrl';
+  $('shnote').textContent = 'Друзья откроют сайт по ссылке. Фото и видео хранятся в браузере каждого отдельно.';
+  $('shmsg').textContent = ''; $('shsend').style.display = navigator.share ? '' : 'none';
+  $('shm').classList.add('on');
+};
+$('shclose').onclick = () => $('shm').classList.remove('on');
+$('shm').onclick = e => { if (e.target === $('shm')) $('shm').classList.remove('on'); };
+$('shcopy').onclick = async () => {
+  const u = $('shurl'); u.select();
+  try { await navigator.clipboard.writeText(u.value); } catch(e) { document.execCommand('copy'); }
+  $('shmsg').textContent = '✓ Ссылка скопирована';
+};
+$('shsend').onclick = () => navigator.share({title: CONFIG.siteName, text: CONFIG.shareText, url: shareLink()}).catch(() => {});
+
+const R = Math.random, N = 4500;
+
+// ===== 3D-фон =====
+const renderer = new THREE.WebGLRenderer({canvas: $('bg'), antialias: true, alpha: true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, 1, .1, 100); camera.position.z = 9;
+const geo = new THREE.BufferGeometry();
+const pos = new Float32Array(N*3), col = new Float32Array(N*3);
+geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+const points = new THREE.Points(geo, new THREE.PointsMaterial({size:CONFIG.particleSize, vertexColors:true, transparent:true, opacity:.9, depthWrite:false, blending:THREE.AdditiveBlending}));
+scene.add(points);
+
+// голографическое ядро: каркас + кольца + сетка-пол
+const A = new THREE.Color(CONFIG.accentColor), B = new THREE.Color(CONFIG.accent2Color);
+const core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.5, 1), new THREE.MeshBasicMaterial({color:A, wireframe:true, transparent:true, opacity:.28}));
+const ringA = new THREE.Mesh(new THREE.TorusGeometry(3.6, .012, 8, 160), new THREE.MeshBasicMaterial({color:A, transparent:true, opacity:.6}));
+const ringB = new THREE.Mesh(new THREE.TorusGeometry(4.3, .012, 8, 160), new THREE.MeshBasicMaterial({color:B, transparent:true, opacity:.5}));
+const grid = new THREE.GridHelper(44, 44, A, 0x0a3a55); grid.position.y = -4.2; grid.material.transparent = true; grid.material.opacity = .35;
+scene.add(core, ringA, ringB, grid);
+
+const SHAPES = {
+  'Звёзды': () => [(R()-.5)*16, (R()-.5)*10, (R()-.5)*12],
+  'Галактика': i => { const r=R()*5, a=r*1.1+(i%3)*2.094+(R()-.5)*.5; return [r*Math.cos(a),(R()-.5)*.6*(1-r/6),r*Math.sin(a)]; },
+  'Шар': () => { const u=R()*2-1, a=R()*6.283, q=Math.sqrt(1-u*u); return [3.2*q*Math.cos(a),3.2*u,3.2*q*Math.sin(a)]; },
+  'Волна': () => { const x=(R()-.5)*11, z=(R()-.5)*8; return [x,Math.sin(x*.9)*Math.cos(z*.9)*1.2,z]; },
+  'Тоннель': () => { const a=R()*6.283, r=2.5+R()*.8; return [r*Math.cos(a),r*Math.sin(a),(R()-.5)*14]; }
+};
+const targets = {};
+for (const [n, fn] of Object.entries(SHAPES)) { const a = new Float32Array(N*3); for (let i=0;i<N;i++) a.set(fn(i), i*3); targets[n] = a; }
+const C = CONFIG.particleColors.map(c => new THREE.Color(c));
+for (let i=0;i<N;i++) { const c = C[0].clone().lerp(C[i%3===0?2:1], R()); col.set([c.r,c.g,c.b], i*3); pos.set([(R()-.5)*20,(R()-.5)*20,(R()-.5)*20], i*3); }
+
+let mode = SHAPES[CONFIG.defaultMode] ? CONFIG.defaultMode : 'Галактика';
+try { const m = localStorage.getItem('mode'); if (targets[m]) mode = m; } catch(e) {}
+const mark = () => document.querySelectorAll('.modes button').forEach(b => b.classList.toggle('on', b.textContent === mode));
+document.querySelectorAll('.modes').forEach(box => {
+  for (const n of Object.keys(SHAPES)) {
+    const b = document.createElement('button'); b.textContent = n;
+    b.onclick = () => { mode = n; try { localStorage.setItem('mode', n); } catch(e) {} mark(); };
+    box.appendChild(b);
+  }
+});
+mark();
+
+let mx = 0, my = 0;
+addEventListener('pointermove', e => { mx = e.clientX/innerWidth-.5; my = e.clientY/innerHeight-.5; });
+const resize = () => { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); };
+addEventListener('resize', resize); resize();
+const clock = new THREE.Clock();
+(function loop() {
+  const t = clock.getElapsedTime(), tg = targets[mode];
+  for (let i=0;i<N*3;i++) pos[i] += (tg[i]-pos[i])*.04;
+  geo.attributes.position.needsUpdate = true;
+  points.rotation.y = t*CONFIG.rotationSpeed + mx*1.2; points.rotation.x = my*.6;
+  points.position.y = Math.sin(t*.6)*.2;
+  core.rotation.x = t*.3; core.rotation.y = t*.45; core.scale.setScalar(1 + Math.sin(t*1.5)*.06);
+  ringA.rotation.set(1.2 + Math.sin(t*.4)*.3, t*.25, 0); ringB.rotation.set(t*.2, 1.1, t*.15);
+  camera.position.x += (mx*1.5 - camera.position.x)*.04; camera.position.y += (-my*1 - camera.position.y)*.04; camera.lookAt(0,0,0);
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+})();
+
+// ===== Переключение страниц =====
+document.querySelectorAll('#nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.id === b.dataset.p));
+  document.querySelectorAll('#nav button').forEach(x => x.classList.toggle('on', x === b));
+  if (b.dataset.p === 'p-gal') render();
+  scrollTo(0, 0);
+});
+
+// ===== Хранилище (IndexedDB — в браузере, сервер не нужен) =====
+let db, memory = [];
+const open = () => new Promise(res => {
+  try {
+    const rq = indexedDB.open('childhood', 1);
+    rq.onupgradeneeded = () => rq.result.createObjectStore('items', {keyPath: 'id', autoIncrement: true});
+    rq.onsuccess = () => { db = rq.result; res(); };
+    rq.onerror = () => res();
+  } catch(e) { res(); }
+});
+const tx = (mode, fn) => new Promise(res => {
+  if (!db) return res(fn(null));
+  const t = db.transaction('items', mode), s = t.objectStore('items');
+  const r = fn(s); t.oncomplete = () => res(r && r.result); t.onerror = () => res();
+});
+const getAll = () => db ? new Promise(res => { const r = db.transaction('items').objectStore('items').getAll(); r.onsuccess = () => res(r.result); r.onerror = () => res([]); }) : Promise.resolve(memory);
+const add = item => db ? tx('readwrite', s => s.add(item)) : (item.id = Date.now() + R(), memory.push(item));
+const del = id => db ? tx('readwrite', s => s.delete(id)) : (memory = memory.filter(i => i.id !== id));
+
+// ===== Загрузка (страница 1) =====
+const fmt = s => new Date(s + 'T00:00').toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'});
+const iso = t => new Date(t).toISOString().slice(0, 10);
+$('file').onchange = e => {
+  const fs = e.target.files; $('go').disabled = !fs.length; if (!fs.length) return;
+  if (fs.length === 1 && !$('title').value) $('title').value = fs[0].name.replace(/\.[^.]+$/, '');
+  if (!$('date').value) $('date').value = iso(fs[0].lastModified);
+};
+$('go').onclick = async () => {
+  const fs = [...$('file').files]; if (!fs.length) return;
+  $('go').disabled = true; $('msg').textContent = 'ПЕРЕДАЧА ДАННЫХ…';
+  for (const f of fs) {
+    await add({
+      title: fs.length === 1 ? $('title').value : f.name.replace(/\.[^.]+$/, ''),
+      date: $('date').value || iso(f.lastModified),
+      type: f.type.startsWith('video') ? 'video' : 'image',
+      blob: f
+    });
+  }
+  $('msg').textContent = '✓ ДАННЫЕ СОХРАНЕНЫ · смотри вкладку «' + CONFIG.navGallery.replace(/^\S+\s/, '') + '»';
+  $('file').value = ''; $('title').value = ''; $('date').value = '';
+};
+
+// ===== Архив (страница 2) =====
+let urls = [];
+async function render() {
+  urls.forEach(URL.revokeObjectURL); urls = [];
+  const items = (await getAll()).sort((a, b) => b.date.localeCompare(a.date));
+  const box = $('list'); box.textContent = '';
+  $('count').textContent = items.length ? 'записей: ' + items.length : '';
+  if (!items.length) { box.innerHTML = '<p class="empty">АРХИВ ПУСТ · загрузи данные на главной странице</p>'; return; }
+  let last = '', grid, n = items.length;
+  for (const it of items) {
+    if (it.date !== last) {
+      last = it.date;
+      const h = document.createElement('h3'); h.textContent = fmt(it.date);
+      grid = document.createElement('div'); grid.className = 'grid';
+      box.append(h, grid);
+    }
+    const u = URL.createObjectURL(it.blob); urls.push(u);
+    const c = document.createElement('div'); c.className = 'c';
+    const m = document.createElement(it.type === 'video' ? 'video' : 'img');
+    m.src = u; if (it.type === 'video') { m.muted = true; m.preload = 'metadata'; m.playsInline = true; }
+    const tg = document.createElement('span'); tg.className = 'tag'; tg.textContent = (it.type === 'video' ? 'ВИДЕО-' : 'ФОТО-') + String(n--).padStart(3, '0');
+    const d = document.createElement('div'); d.className = 'in';
+    const b = document.createElement('b'); b.textContent = it.title || 'Без названия';
+    const x = document.createElement('button'); x.className = 'x'; x.textContent = '✕';
+    x.onclick = async e => { e.stopPropagation(); if (confirm('Удалить запись?')) { await del(it.id); render(); } };
+    d.append(b, x); c.append(m, tg, d);
+    c.onclick = () => show(it, u);
+    // 3D-наклон карточки
+    c.onpointermove = e => { const r = c.getBoundingClientRect(); const px = (e.clientX-r.left)/r.width-.5, py = (e.clientY-r.top)/r.height-.5; c.style.transform = `rotateY(${px*14}deg) rotateX(${-py*14}deg) scale(1.04)`; };
+    c.onpointerleave = () => c.style.transform = '';
+    grid.appendChild(c);
+  }
+}
+function show(it, u) {
+  const v = $('view'); v.textContent = '';
+  const m = document.createElement(it.type === 'video' ? 'video' : 'img');
+  m.src = u; if (it.type === 'video') { m.controls = true; m.autoplay = true; m.playsInline = true; }
+  const p = document.createElement('div'); p.className = 'tag'; p.textContent = (it.title || '') + ' · ' + fmt(it.date);
+  const b = document.createElement('button'); b.textContent = 'Закрыть';
+  b.onclick = () => { v.classList.remove('on'); v.textContent = ''; };
+  v.append(m, p, b); v.classList.add('on');
+}
+
+open();
+</script>
+</body></html>
