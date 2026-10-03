@@ -105,8 +105,10 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--b)
   <div class="row modes"></div>
   <div class="hud">
     <h2 id="t-up"></h2>
-    <p id="how" style="text-align:center;margin:6px 0 14px;opacity:.85"></p>
-    <div class="row"><a id="pick" target="_blank" rel="noopener">Добавить файлы</a></div>
+    <div class="row"><label id="pick" for="file">Выбрать файлы</label><input id="file" type="file" accept="image/*,video/*" multiple hidden></div>
+    <div class="row"><input id="title" type="text" placeholder="Название"><input id="date" type="date"></div>
+    <div class="row"><button id="go" disabled>Загрузить в архив</button></div>
+    <div id="msg"></div>
   </div>
 </div>
 
@@ -137,7 +139,7 @@ const CONFIG = {
   siteName:     'Трио friend',                      // название сайта
   subtitle:     'архив воспоминаний',               // подзаголовок
   galleryTitle: 'Архив',                            // заголовок 2-й страницы
-  uploadTitle:  'Добавить фото и видео',                  // заголовок блока загрузки
+  uploadTitle:  'Загрузка данных',                  // заголовок блока загрузки
   navHome:      '◈ Главная',                        // кнопка 1-й страницы
   navGallery:   '▣ Архив',                          // кнопка 2-й страницы
   bgColor:      '#03050d',                          // цвет фона
@@ -148,9 +150,8 @@ const CONFIG = {
   rotationSpeed: 0.15,                              // скорость вращения 3D
   defaultMode:  'Галактика',                        // Звёзды / Галактика / Шар / Волна / Тоннель
   shareUrl:     'https://kanmambit-tech.github.io/friend/', // ССЫЛКА на сайт, которую получат друзья (замени на свою)
-  githubUser:   'kanmambit-tech',                   // твой логин на GitHub
-  githubRepo:   'friend',                           // название репозитория
-  folder:       'media',                            // папка с фото и видео в репозитории
+  supabaseUrl:  'https://tlvbwtcsnvytqlsxrrdi.supabase.co', // адрес проекта
+  supabaseKey:  'sb_publishable_fCjgKgN1fT0TkultHGiMDQ_1spXZhlu', // публичный ключ
   shareBtn:     '⇪ Поделиться',                     // текст кнопки в правом верхнем углу
   shareTitle:   'Поделиться сайтом',                // заголовок окна
   shareText:    'Заходи на наш сайт!',              // текст при отправке
@@ -180,7 +181,7 @@ const shareLink = () => CONFIG.shareUrl || (location.protocol.startsWith('http')
 $('sh').onclick = () => {
   const u = shareLink();
   $('shurl').value = u || 'Сначала опубликуй сайт и впиши ссылку в CONFIG → shareUrl';
-  $('shnote').textContent = 'Все фото и видео лежат в репозитории GitHub: их видят и могут скачать все, у кого есть ссылка.';
+  $('shnote').textContent = 'Все фото и видео хранятся в общем облаке: их видят и могут скачать все, у кого есть ссылка.';
   $('shmsg').textContent = ''; $('shsend').style.display = navigator.share ? '' : 'none';
   $('shm').classList.add('on');
 };
@@ -265,33 +266,56 @@ document.querySelectorAll('#nav button').forEach(b => b.onclick = () => {
   scrollTo(0, 0);
 });
 
-// ===== Файлы лежат в папке репозитория GitHub =====
-const REPO = CONFIG.githubUser + '/' + CONFIG.githubRepo;
-const fileUrl = p => CONFIG.folder + '/' + encodeURIComponent(p);
-const IMG = /\.(jpe?g|png|gif|webp|avif|heic|bmp)$/i, VID = /\.(mp4|mov|webm|m4v|3gp|mkv)$/i;
+// ===== Общее облачное хранилище (Supabase) =====
+const SB = CONFIG.supabaseUrl.replace(/\/$/, ''), H = CONFIG.supabaseKey.startsWith('sb_') ? {apikey: CONFIG.supabaseKey} : {apikey: CONFIG.supabaseKey, Authorization: 'Bearer ' + CONFIG.supabaseKey};
+const fileUrl = p => SB + '/storage/v1/object/public/files/' + p;
+let upErr = '';
 const getAll = async () => {
+  try { const r = await fetch(SB + '/rest/v1/items?select=*&order=date.desc', {headers: H}); if (!r.ok) throw 0; return await r.json(); }
+  catch(e) { $('count').textContent = 'ОШИБКА СВЯЗИ С ОБЛАКОМ'; return []; }
+};
+const add = async item => {
   try {
-    const r = await fetch('https://api.github.com/repos/' + REPO + '/contents/' + CONFIG.folder);
-    if (r.status === 404) return [];
-    if (!r.ok) throw 0;
-    return (await r.json()).filter(f => f.type === 'file' && (IMG.test(f.name) || VID.test(f.name))).map(f => {
-      const m = f.name.match(/^(\d{4}-\d{2}-\d{2})[_ -]*(.*)\.[^.]+$/);
-      return {path: f.name, type: VID.test(f.name) ? 'video' : 'image', date: m ? m[1] : '', title: m ? m[2] : f.name.replace(/\.[^.]+$/, '')};
-    });
-  } catch(e) { $('count').textContent = 'НЕ УДАЛОСЬ ЗАГРУЗИТЬ СПИСОК'; return []; }
+    const f = item.file, ext = (f.name.match(/\.[A-Za-z0-9]+$/) || [''])[0].toLowerCase();
+    const path = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + ext;
+    let r = await fetch(SB + '/storage/v1/object/files/' + path, {method: 'POST', headers: {...H, 'Content-Type': f.type || 'application/octet-stream'}, body: f});
+    if (!r.ok) throw new Error('файл не загрузился (' + r.status + ')');
+    r = await fetch(SB + '/rest/v1/items', {method: 'POST', headers: {...H, 'Content-Type': 'application/json'}, body: JSON.stringify({title: item.title, date: item.date, type: item.type, path})});
+    if (!r.ok) throw new Error('запись не сохранилась (' + r.status + ')');
+  } catch(e) { upErr = e.message || 'нет связи'; }
 };
 const download = async it => {
   try {
     const b = await (await fetch(fileUrl(it.path))).blob(), a = document.createElement('a');
-    a.href = URL.createObjectURL(b); a.download = it.path; a.click();
+    a.href = URL.createObjectURL(b); a.download = (it.title || 'file') + (it.path.match(/\.[A-Za-z0-9]+$/) || [''])[0]; a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   } catch(e) { window.open(fileUrl(it.path), '_blank'); }
 };
 
-// ===== Добавление (через страницу загрузки GitHub) =====
+// ===== Загрузка (страница 1) =====
 const fmt = s => s ? new Date(s + 'T00:00').toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'}) : 'Без даты';
-$('pick').href = 'https://github.com/' + REPO + '/upload/main/' + CONFIG.folder;
-$('how').innerHTML = 'Нажми кнопку, перетащи файлы на открывшуюся страницу GitHub и нажми <b>Commit changes</b>.<br>Через минуту они появятся в архиве. Чтобы файл попал под нужную дату, назови его так: <b>2026-10-03_Название.jpg</b>';
+const iso = t => new Date(t).toISOString().slice(0, 10);
+$('file').onchange = e => {
+  const fs = e.target.files; $('go').disabled = !fs.length; if (!fs.length) return;
+  $('pick').textContent = fs.length > 1 ? 'Выбрано: ' + fs.length : 'Выбрать файлы';
+  if (fs.length === 1 && !$('title').value) $('title').value = fs[0].name.replace(/\.[^.]+$/, '');
+  if (!$('date').value) $('date').value = iso(fs[0].lastModified);
+};
+$('go').onclick = async () => {
+  const fs = [...$('file').files]; if (!fs.length) return;
+  $('go').disabled = true; $('msg').textContent = 'ПЕРЕДАЧА ДАННЫХ…';
+  for (const f of fs) {
+    await add({
+      title: fs.length === 1 ? $('title').value : f.name.replace(/\.[^.]+$/, ''),
+      date: $('date').value || iso(f.lastModified),
+      type: f.type.startsWith('video') ? 'video' : 'image',
+      file: f
+    });
+  }
+  if (upErr) { $('msg').textContent = '✗ ОШИБКА: ' + upErr; $('go').disabled = false; upErr = ''; return; }
+  $('msg').textContent = '✓ ДАННЫЕ СОХРАНЕНЫ · смотри вкладку «' + CONFIG.navGallery.replace(/^\S+\s/, '') + '»';
+  $('file').value = ''; $('title').value = ''; $('date').value = ''; $('pick').textContent = 'Выбрать файлы';
+};
 
 // ===== Архив (страница 2) =====
 let urls = [];
